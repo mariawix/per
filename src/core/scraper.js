@@ -4,12 +4,9 @@ const sha1 = require('sha1')
 const sites = require('../tests/sites')
 const fetcher = require('./fetcher')
 
-function shouldScrapeUrl(url){
-    // return !/^(?:https?:\/\/)?static\.parastorage\.com\/\w*\/santa\/[\d.]*\/packages-bin.*$/.test(url)
-    return !/^data:/.test(url)
-}
+const shouldScrapeUrl = (url) => !/^data:/.test(url)
 
-async function scrapeSite(sitesResources, url) {
+async function scrapeSite(sitesResources, siteUrl) {
     const browser = await puppeteer.launch({headless: false})
     const page = await browser.newPage()
 
@@ -23,14 +20,16 @@ async function scrapeSite(sitesResources, url) {
         }
     });
 
-    await page.goto(url)
+    await page.goto(siteUrl)
     await browser.close()
 }
 
-async function scrapeSites(latestArtifactVersion, targetDir) {
+async function scrapeSites(santaVersion, targetDir) {
     const sitesResources = {}
-    await Promise.all(_.map(sites, (url) => scrapeSite(sitesResources, `${url}?ReactSource=${latestArtifactVersion}`)))
-    await Promise.all(_.map(sitesResources, (resourceData, hash) => fetcher.downloadFile(resourceData.url, `${targetDir}/${hash}`)))
+    await Promise.all(_.map(sites, (url) => scrapeSite(sitesResources, `${url}?ReactSource=${santaVersion}`)))
+    console.log('sitesResources built')
+    await Promise.all(_.map(sitesResources, (resourceData, hash) => fetcher.downloadFile(resourceData.url, targetDir, hash)))
+        .catch((err, url) => console.log(`Failed to load ${url}. Error: ${err}`))
     return sitesResources
 }
 

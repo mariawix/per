@@ -2,7 +2,8 @@
 
 const request = require('request-promise')
 const parser = require('xml2json')
-const wget = require('wget')
+const download = require('download-file')
+const _ = require('lodash')
 
 const BASE_SNAPSHOT_URL = 'http://repo.dev.wix/artifactory/libs-snapshots/com/wixpress/html-client'
 
@@ -12,20 +13,17 @@ function getLatestSnapshotVersionFromArtifactMaven(xml) {
     return artifactMavenMetadata.metadata.versioning.latest.split(('-'))[0]
 }
 
-function getSnapshotUrl(artifactName, xml) {
-    const json = parser.toJson(xml)
-    const snapshotVersionMetadata = JSON.parse(json)
-    const versions = snapshotVersionMetadata.metadata.versioning.snapshotVersions.snapshotVersion
-    const version = versions[versions.length - 1].value
-    const snapshotVersion = `${version.split('-')[0]}-SNAPSHOT`
-    return `${BASE_SNAPSHOT_URL}/${artifactName}/${snapshotVersion}/${artifactName}-${version}.tar.gz`
-}
+function downloadFile(url, directory, filename) {
+    const options = {directory, filename}
 
-function downloadFile(url, targetPath) {
     return new Promise((resolve, reject) => {
-        const download = wget.download(url, targetPath)
-        download.on('error', reject)
-        download.on('end', resolve)
+        download(url, options, function (err){
+            if (err) {
+                reject(err, url)
+                return
+            }
+            resolve()
+        })
     })
 }
 
@@ -39,20 +37,6 @@ function getArtifactMaven(artifactName) {
     })
 }
 
-function downloadArtifact(artifactName, snapshotVersion, targetDir) {
-    const artifactSnapshotMetadataPath = `${BASE_SNAPSHOT_URL}/${artifactName}/${snapshotVersion}-SNAPSHOT/maven-metadata.xml`
-    return new Promise((resolve, reject) => {
-        request.get(artifactSnapshotMetadataPath)
-            .then((body) => {
-                const snapshotUrl = getSnapshotUrl(artifactName, body)
-                const targetPath = `${targetDir}/${artifactName}-snapshot.tar.gz`
-                return downloadFile(snapshotUrl, targetPath)
-            })
-            .then(resolve)
-            .catch(reject)
-    })
-}
-
 function getLatestSnapshotVersionByArtifactName(artifactName) {
     return new Promise((resolve, reject) => {
         getArtifactMaven(artifactName)
@@ -61,8 +45,33 @@ function getLatestSnapshotVersionByArtifactName(artifactName) {
     })
 }
 
+function getPreviousMinorVersion(version) {
+    const entities = _.map(version.split('.'), _.toNumber)
+    entities[1]--
+    return entities.join('.')
+}
+
+async function getLatestUploadedSnapshotVersionByArtifactName(artifactName, targetDir) {
+    let version = await getLatestSnapshotVersionByArtifactName(artifactName)
+    let tries = 3, success = false
+    while (tries > 0 && !success) {
+        success = true
+        await downloadFile(`https://static.parastorage.com/services/santa/${version}/app/main-r.min.js`, targetDir, version)
+            .catch(() => {
+                success = false
+                tries--
+                console.log(`Cannot download ${version}. Trying to download previous version`)
+                version = getPreviousMinorVersion(version)
+            })
+        if (success) {
+            return version
+        }
+    }
+
+    console.error(`Failed to find uploaded version of ${artifactName}`)
+}
+
 module.exports = {
-    getLatestSnapshotVersionByArtifactName,
-    downloadFile,
-    downloadArtifact
+    getLatestUploadedSnapshotVersionByArtifactName,
+    downloadFile
 }
