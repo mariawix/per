@@ -1,0 +1,47 @@
+{
+  "name": "santa-performance-tests",
+  "version": "1.0.0",
+  "description": "Santa performance tests",
+  "main": "dist/main.js",
+  "scripts": {
+    "clean": "rm -rf src/target && mkdir src/target",
+    "extract": "cd src/target && mkdir santa && tar zxf santa-snapshot.tar.gz -C santa/",
+    "start": "node server/index.js",
+    "build": "clean && webpack -p",
+    "test": "node src/core/index.js",
+    "release": "santa-release"
+  },
+  "publishConfig": {
+    "registry": "http://repo.dev.wix/artifactory/api/npm/npm-local/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wix-private/santa-core/santa-performance-tests"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "6.23.1",
+    "babel-loader": "6.3.2",
+    "babel-preset-env": "1.6.1",
+    "body-parser": "1.18.2",
+    "express": "4.16.2",
+    "puppeteer": "0.11.0",
+    "request": "2.81.0",
+    "request-promise": "4.2.2",
+    "webpack": "2.3.2",
+    "wget": "0.0.1",
+    "wnpm-ci": "*",
+    "xml2json": "0.11.0"
+  },
+  "dependencies": {
+    "crawler": "1.1.1",
+    "lodash": "4.17.4",
+    "sha1": "1.1.1"
+  },
+  "keywords": [
+    "santa",
+    "performance",
+    "editor"
+  ]
+}
