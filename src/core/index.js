@@ -3,6 +3,8 @@
 const fetcher = require('./fetcher')
 const scraper = require('./scraper')
 const siteRunner = require('./siteRunner')
+const _ = require('lodash')
+const path = require('path')
 
 const TARGET_DIR = './src/target'
 const ARTIFACT_NAME = 'santa';

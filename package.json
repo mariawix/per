@@ -25,11 +25,11 @@
     "babel-loader": "6.3.2",
     "babel-preset-env": "1.6.1",
     "body-parser": "1.18.2",
-    "puppeteer": "0.12.0",
+    "download-file": "0.1.5",
+    "puppeteer": "0.13.0",
     "request": "2.81.0",
     "request-promise": "4.2.2",
     "webpack": "2.3.2",
-    "download-file": "0.1.5",
     "wnpm-ci": "*",
     "xml2json": "0.11.0"
   },

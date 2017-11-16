@@ -4,6 +4,7 @@ const request = require('request-promise')
 const parser = require('xml2json')
 const download = require('download-file')
 const _ = require('lodash')
+const fs = require('fs')
 
 const BASE_SNAPSHOT_URL = 'http://repo.dev.wix/artifactory/libs-snapshots/com/wixpress/html-client'
 
@@ -13,12 +14,20 @@ function getLatestSnapshotVersionFromArtifactMaven(xml) {
     return artifactMavenMetadata.metadata.versioning.latest.split(('-'))[0]
 }
 
-function downloadFile(url, directory, filename) {
-    const options = {directory, filename}
-
+function downloadFile(url, targetDir, filename) {
     return new Promise((resolve, reject) => {
-        download(url, options, function (err){
+        const dest = `${targetDir}/${filename}`
+        if (fs.existsSync(dest)) {
+            console.log(`File ${dest} already exists\n`)
+            resolve()
+            return
+        }
+        const options = {directory: targetDir, filename}
+        // download(url, path.join(directory, filename), true)
+        // resolve()
+        download(url, options, function (err) {
             if (err) {
+                console.log(`Failed to load ${url.split('?')[0]}?...`)
                 reject(err, url)
                 return
             }
@@ -60,7 +69,7 @@ async function getLatestUploadedSnapshotVersionByArtifactName(artifactName, targ
             .catch(() => {
                 success = false
                 tries--
-                console.log(`Cannot download ${version}. Trying to download previous version`)
+                console.log(`Cannot download ${version}. Trying to download previous version\n`)
                 version = getPreviousMinorVersion(version)
             })
         if (success) {
